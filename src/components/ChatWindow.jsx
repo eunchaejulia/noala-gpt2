@@ -4,10 +4,37 @@ export default function ChatWindow() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
-  const handleSend = () => {
+  const fetchReply = async (message) => {
+    try {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [{ role: "user", content: message }],
+        }),
+      });
+
+      const data = await res.json();
+      console.log("🔍 OpenAI 응답:", data);
+      return data.choices?.[0]?.message?.content || "응답 오류남.";
+    } catch (error) {
+      console.error("❌ API 에러:", error);
+      return "에러났음. API키 확인해봐라.";
+    }
+  };
+
+  const handleSend = async () => {
     if (!input.trim()) return;
-    setMessages([...messages, { from: "user", text: input }, { from: "bot", text: "ㅇㅇ 뭐" }]);
+    const newMessages = [...messages, { from: "user", text: input }];
+    setMessages(newMessages);
     setInput("");
+
+    const reply = await fetchReply(input);
+    setMessages([...newMessages, { from: "bot", text: reply }]);
   };
 
   return (
